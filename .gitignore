@@ -1,0 +1,3 @@
+verification/tb/**/work
+verification/tb/**/log
+verification/tb/**/verilator_output

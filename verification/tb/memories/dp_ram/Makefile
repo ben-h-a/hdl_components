@@ -1,0 +1,2 @@
+VERILATOR_INPUT := ${LOGICAL_ROOT}/memories/dp_ram.sv ${TARGET_PATH}/tb.cpp
+VERILATOR_TARGET_NAME = Vdp_ram

@@ -1,0 +1,13 @@
+#!/bin/zsh
+
+#tool variables
+export VERILATOR_ROOT=/Users/benallen/Applications/verilator/git_main/verilator
+export PATH=$VERILATOR_ROOT/bin:$PATH
+#Project env variables
+export PROJECT_ROOT=$PWD
+export LOGICAL_ROOT=$PROJECT_ROOT/logical
+export LOGICAL_MEMORIES_ROOT=$LOGICAL_ROOT/memories
+
+export VERIFICATION_ROOT=$PROJECT_ROOT/verification
+export TB_SCRIPTS_ROOT=$VERIFICATION_ROOT/scripts
+export TB_TARGETS_ROOT=$VERIFICATION_ROOT/tb

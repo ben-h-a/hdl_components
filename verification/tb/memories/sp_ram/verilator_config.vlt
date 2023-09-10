@@ -1,0 +1,4 @@
+`verilator_config
+lint_off -rule UNUSEDSIGNAL -file "sp_ram.sv" -match "mem"
+lint_off -rule UNUSEDSIGNAL -file "sp_ram.sv" -match "D"
+lint_off -rule UNDRIVEN -file "sp_ram.sv"

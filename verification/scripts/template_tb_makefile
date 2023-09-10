@@ -1,0 +1,9 @@
+#Verilator input files. this sould include the verilog files, tb.cpp, 
+#${TARGET_PATH} is should be used to refer to files in the TB root directory.
+
+VERILATOR_INPUT := ${TARGET_PATH}/tb.cpp
+VERILATOR_INPUT += ${TARGET_PATH}/verilator_config.vlt
+VERILATOR_INPUT += YOUR INPUT FILES HERE
+
+#The output executeable name to run the TB. This is the name of the TB top level
+VERILATOR_TARGET_NAME = YOUR OUTPUT EXECUTEABLE NAME
