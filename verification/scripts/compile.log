@@ -1,0 +1,15 @@
+cd /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram;	rm -rf obj_dir logs *.log *.dmp *.vpd core;cd /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/scripts
+mkdir -p /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/work
+
+-- VERILATE ----------------
+/Users/benallen/Applications/verilator/git_main/verilator/bin/verilator --version
+Verilator 5.015 devel rev v5.014-31-g63db60f64
+/Users/benallen/Applications/verilator/git_main/verilator/bin/verilator  --cc --x-assign 0 -Wall --assert --coverage --build -j -CFLAGS " " --Mdir /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/obj_dir --top dp_ram  /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/verilator_config.vlt  /Users/benallen/Documents/git_repos/HDL/hdl_components/logical/memories/dp_ram.sv
+/Library/Frameworks/Python.framework/Versions/3.11/bin/python3 /Users/benallen/Applications/verilator/git_main/verilator/bin/verilator_includer -DVL_INCLUDE_OPT=include Vdp_ram.cpp Vdp_ram___024root__DepSet_h46bbb05a__0.cpp Vdp_ram___024root__DepSet_h896bceac__0.cpp Vdp_ram___024root__Slow.cpp Vdp_ram___024root__DepSet_h46bbb05a__0__Slow.cpp Vdp_ram___024root__DepSet_h896bceac__0__Slow.cpp Vdp_ram__Syms.cpp > Vdp_ram__ALL.cpp
+g++ -Os  -I.  -MMD -I/Users/benallen/Applications/verilator/git_main/verilator/include -I/Users/benallen/Applications/verilator/git_main/verilator/include/vltstd -DVM_COVERAGE=1 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fbracket-depth=4096 -fcf-protection=none -Qunused-arguments -Wno-bool-operation -Wno-tautological-bitwise-compare -Wno-parentheses-equality -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-shadow      -std=gnu++17 -c -o Vdp_ram__ALL.o Vdp_ram__ALL.cpp
+echo "" > Vdp_ram__ALL.verilator_deplist.tmp
+Archive ar -rcs Vdp_ram__ALL.a Vdp_ram__ALL.o
+rm Vdp_ram__ALL.verilator_deplist.tmp
+
+-- COMPILE TB---------------
+g++ -I/Users/benallen/Applications/verilator/git_main/verilator/include -I/Users/benallen/Documents/git_repos/HDL/hdl_components/verification/common/clocking/ -I/Users/benallen/Documents/git_repos/HDL/hdl_components/verification/common/testbench/ -I/Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/obj_dir/  /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/common/clocking/tbclock.cpp /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/common/testbench/base_testbench.cpp /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/tb.cpp /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/obj_dir/*.cpp -std=c++20 -Og -g -Wall -march=native -v -o /Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/obj_dir/dp_ram -L/Users/benallen/Documents/git_repos/HDL/hdl_components/verification/tb/memories/dp_ram/obj_dir/

@@ -13,4 +13,5 @@ export TB_SCRIPTS_ROOT=$VERIFICATION_ROOT/scripts
 export TB_TARGETS_ROOT=$VERIFICATION_ROOT/tb
 export VERIF_COMMON_ROOT=$VERIFICATION_ROOT/common
 
-alias @tb 'cd $TB_SCRIPTS_ROOT'
+alias @tb "cd $TB_SCRIPTS_ROOT"
+alias @root "cd $PROJECT_ROOT"

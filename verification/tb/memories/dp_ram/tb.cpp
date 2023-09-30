@@ -1,145 +1,127 @@
-#include "Vdp_ram.h"
 #include "tbclock.h"
+#include "base_testbench.h"
 #include "verilated.h"
 #include <verilated_vcd_c.h>
+#include <functional>
+#include "Vdp_ram.h"
 
+typedef struct
+{
+    uint32_t w_data;
+    uint32_t r_data;
+    uint32_t address;
+    uint32_t w_byte_enable;
+} SramData;
 
-class TESTBENCH {
-    public:
-    unsigned long   m_time_ps;
-    Vdp_ram  *m_core;
-    TBCLOCK clk_a;
-    TBCLOCK clk_b;
-    VerilatedVcdC* m_trace;
+class DpSramTestbench : public BaseTestbench<Vdp_ram>
+{
+private:
+    SramData *a_data;
+    unsigned int a_data_len;
+    unsigned int a_data_index;
 
+    SramData *b_data;
+    unsigned int b_data_len;
+    unsigned int b_data_index;
 
-    TESTBENCH(void) {
-        m_core = new Vdp_ram;
-        m_time_ps = 0l;
-        m_core->CLK_A = 0;
-        m_core->CLK_B = 0;
-        m_core->RST_N = 0;
-        m_trace = NULL;
-        clk_a.init(10000); //100Mhz
-        clk_b.init(10000); //100Mhz
+public:
+    bool a_data_complete;
+    bool b_data_complete;
+    ~DpSramTestbench();
+    DpSramTestbench();
+    DpSramTestbench(Vdp_ram *top_core,
+                    unsigned int a_clk_period,
+                    unsigned int b_clk_period,
+                    VerilatedVcdC *m_trace = NULL)
+        : BaseTestbench(top_core, m_trace)
+    {
+        auto clk_a_rise_lambda = [this]()
+        {
+            this->assign_a_clk_rise();
+        };
+        auto clk_b_rise_lambda = [this]()
+        {
+            this->assign_b_clk_rise();
+        };
+        TbClock a_clk = TbClock(a_clk_period, clk_a_rise_lambda, []() {});
+        TbClock b_clk = TbClock(b_clk_period, clk_b_rise_lambda, []() {});
     }
 
-    ~TESTBENCH(void) {
-        delete m_core;
-        m_core = NULL;
-        clk_a = NULL;
-        clk_b = NULL;
+    void assign_a_clk_rise()
+    {
+        // Write assignment
+        if (a_data_index >= a_data_len)
+        {
+            a_data_complete = true;
+            return;
+        }
+        else
+        {
+            a_data_complete = false;
+        }
+        this->m_core->W_EN_A = this->a_data[a_data_index].w_byte_enable;
+        this->m_core->ADDR_A = this->a_data[a_data_index].address;
+        this->a_data[a_data_index].r_data = this->m_core->R_DATA_A;
+        if (a_data[a_data_index].w_data != NULL)
+        {
+            this->m_core->W_DATA_A = this->a_data[a_data_index].w_data;
+        }
+        else
+        {
+            this->m_core->W_DATA_A = 0x0;
+        }
+        a_data_index++;
     }
 
-    void    reset(void) {
-        m_core->RST_N = 0;
-        // Make sure any inheritance gets applied
-        this->tick();
-        m_core->RST_N = 1;
+    void assign_b_clk_rise()
+    {
+        // Write assignment
+        if (b_data_index >= b_data_len)
+        {
+            b_data_complete = true;
+            return;
+        }
+        else
+        {
+            b_data_complete = false;
+        }
+        this->m_core->W_EN_B = this->b_data[b_data_index].w_byte_enable;
+        this->m_core->ADDR_B = this->b_data[b_data_index].address;
+        this->b_data[b_data_index].r_data = this->m_core->R_DATA_B;
+        if (b_data[b_data_index].w_data != NULL)
+        {
+            this->m_core->W_DATA_B = this->b_data[b_data_index].w_data;
+        }
+        else
+        {
+            this->m_core->W_DATA_B = 0x0;
+        }
+        b_data_index++;
     }
 
-    void write_a(uint32_t * data, uint32_t * addr, uint32_t len){
-        m_core->W_EN_A=0xF;
-        for(uint32_t i=0; i<len; i++){
-            m_core->ADDR_A = *(addr+i);
-            m_core->W_DATA_A = *(data+i);
-            this->tick();
-        }
-        m_core->W_EN_A=0;
+    void trans_a(SramData *data, unsigned int len)
+    {
+        a_data = data;
+        a_data_len = len;
+        a_data_index = 0;
     }
-
-    void read_a(uint32_t * data, uint32_t * addr, uint32_t len){
-        m_core->W_EN_A=0;
-            uint32_t * data_ptr;
-        for(uint32_t i=0; i<len; i++){
-            data_ptr = data+i;
-            m_core->ADDR_A = *(addr+i);
-            *data_ptr = m_core->R_DATA_A;
-            this->tick();
-        }
+    void trans_b(SramData *data, unsigned int len)
+    {
+        b_data = data;
+        b_data_len = len;
+        b_data_index = 0;
     }
-
-    void write_b(uint32_t * data, uint32_t * addr, uint32_t len){
-        m_core->W_EN_B=0xF;
-        for(uint32_t i=0; i<len; i++){
-            m_core->ADDR_B = *(addr+i);
-            m_core->W_DATA_B = *(data+i);
-            this->tick();
-        }
-        m_core->W_EN_B=0;
-    }
-
-    void read_b(uint32_t * data, uint32_t * addr, uint32_t len){
-        m_core->W_EN_B=0;
-            uint32_t * data_ptr;
-        for(uint32_t i=0; i<len; i++){
-            data_ptr = data+i;
-            m_core->ADDR_B = *(addr+i);
-            *data_ptr = m_core->R_DATA_B;
-            this->tick();
-        }
-    }
-
-
-    void tick(TBCLOCK * clocks, int num_clks) {
-        uint32_t mintime = UINT32_MAX;
-
-        for(int i=0; i<num_clks; i++){
-            if(clocks[i].time_to_tick() < mintime){
-                mintime = clocks[i].time_to_tick();
-            }
-        }
-        
-        assert(mintime > 1);
-
-        m_core->eval();
-        if (m_trace) m_trace->dump(m_time_ps+1);
-
-        m_core->i_clk = m_clk.advance(mintime);
-        m_core->i_hdmi_out_clk = m_hdmi_out_clk.advance(mintime);
-        m_core->i_hdmi_in_clk = m_hdmi_in_clk.advance(mintime);
-        m_core->i_hdmi_in_hsclk = m_hdmi_in_hsclk.advance(mintime);
-        m_core->i_clk_200mhz = m_clk_200mhz.advance(mintime);
-
-        m_time_ps += mintime;
-
-        m_core->eval();
-        if (m_trace) {
-            m_trace->dump(m_time_ps+1);
-            m_trace->flush();
-        }
-
-        if (m_clk.falling_edge()) {
-            m_changed = true;
-            sim_clk_tick();
-        }
-        if (m_hdmi_out_clk.falling_edge()) {
-            m_changed = true;
-            sim_hdmi_out_clk_tick();
-        }
-        if (m_hdmi_in_clk.falling_edge()) {
-            m_changed = true;
-            sim_hdmi_in_clk_tick();
-        }
-        if (m_hdmi_in_hsclk.falling_edge()) {
-            m_changed = true;
-            sim_hdmi_in_hsclk_tick();
-        }
-        if (m_clk_200mhz.falling_edge()) {
-            m_changed = true;
-            sim_clk_200mhz_tick();
-        }
-    }
-
-    bool    done(void) { return (Verilated::gotFinish()); }
 };
 
-int main(int argc, char** argv, char** env) {
+int main(int argc, char **argv, char **env)
+{
     // This example started with the Verilator example files.
     // Please see those examples for commented sources, here:
     // https://github.com/verilator/verilator/tree/master/examples
 
-    if (0 && argc && argv && env) {}
+    if (0 && argc && argv && env)
+    {
+    }
 
     Verilated::debug(0);
     Verilated::randReset(2);
@@ -147,44 +129,63 @@ int main(int argc, char** argv, char** env) {
     Verilated::commandArgs(argc, argv);
     Verilated::mkdir("logs");
 
-    TESTBENCH * tb = new TESTBENCH();
-    uint32_t data;
-    uint32_t r_data;
+    DpSramTestbench *tb = new DpSramTestbench();
+    SramData data_a;
+    SramData data_b;
     uint32_t w_data_comp;
     int error = 0;
-    tb->reset();
-    for(uint32_t i=0;i<5;i++){
-        data = std::rand();
-        tb->write_a(&data, &i, 1);
-        tb->read_b(&r_data, &i, 1);
-        w_data_comp = data & 0xFF;
-        if(w_data_comp != r_data){
-            printf("ERROR addr %x: w_data %x != r_data %x\n", 
-                    i, w_data_comp, r_data);
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        data_a.address = i;
+        data_a.w_data = std::rand();
+        data_a.w_byte_enable = 0xFF;
+
+        data_b.address = i;
+        data_b.w_byte_enable = 0x0;
+
+        tb->trans_a(&data_a, 1);
+        tb->trans_b(&data_b, 1);
+        tb->tick();
+        w_data_comp = data_a.w_data & 0xFF;
+        if (w_data_comp != data_b.r_data)
+        {
+            printf("ERROR addr %x: w_data %x != r_data %x\n",
+                   i, w_data_comp, data_b.r_data);
             error = 1;
         }
     }
-    for(uint32_t i=0;i<5;i++){
-        data = std::rand();
-        tb->write_b(&data, &i, 1);
-        tb->read_a(&r_data, &i, 1);
-        w_data_comp = data & 0xFF;
-        if(w_data_comp != r_data){
-            printf("ERROR addr %x: w_data %x != r_data %x\n", 
-                    i, w_data_comp, r_data);
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        data_b.address = i;
+        data_b.w_data = std::rand();
+        data_b.w_byte_enable = 0xFF;
+
+        data_a.address = i;
+        data_a.w_byte_enable = 0x0;
+
+        tb->trans_a(&data_a, 1);
+        tb->trans_b(&data_b, 1);
+        tb->tick();
+        w_data_comp = data_b.w_data & 0xFF;
+        if (w_data_comp != data_a.r_data)
+        {
+            printf("ERROR addr %x: w_data %x != r_data %x\n",
+                   i, w_data_comp, data_a.r_data);
             error = 1;
         }
     }
 
     printf("DONE\n");
-    if(error){
+    if (error)
+    {
         printf("FAIL\n");
-    } else {
+    }
+    else
+    {
         printf("PASS\n");
     }
 
     delete tb;
     tb = NULL;
     exit(0);
-
 }
