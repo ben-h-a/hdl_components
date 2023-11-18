@@ -1,3 +1,5 @@
+*.o
 verification/tb/**/work
 verification/tb/**/log
-verification/tb/**/verilator_output
+verification/tb/**/verilator_objs
+verification/tb/**/obj_dir

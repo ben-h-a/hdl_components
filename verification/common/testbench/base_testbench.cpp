@@ -18,7 +18,6 @@
 template <typename T>
 BaseTestbench<T>::BaseTestbench(T *top_core, VerilatedVcdC *m_trace)
 {
-    // Constructor code, if needed
     this->m_core = top_core;
     this->m_changed = false;
     this->m_trace = m_trace;
@@ -27,7 +26,6 @@ BaseTestbench<T>::BaseTestbench(T *top_core, VerilatedVcdC *m_trace)
 template <typename T>
 BaseTestbench<T>::BaseTestbench(T *top_core, std::vector<TbClock> clocks, VerilatedVcdC *m_trace)
 {
-    // Constructor code, if needed
     this->clocks = clocks;
     this->m_core = top_core;
     this->m_changed = false;
@@ -43,7 +41,6 @@ template <typename T>
 void BaseTestbench<T>::add_clock(TbClock clock)
 {
     this->clocks.pushback(clock);
-    // Destructor code, if needed
 }
 
 template <typename T>

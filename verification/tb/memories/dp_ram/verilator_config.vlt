@@ -1,2 +1,2 @@
 `verilator_config
-lint_off -rule MULTIDRIVEN -file "*/dp_ram.sv"
+lint_off -rule MULTIDRIVEN -file "*/memories/dp_ram.sv" -match "Signal has multiple driving blocks with different clocking: 'dp_ram.mem'*"

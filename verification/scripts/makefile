@@ -1,17 +1,11 @@
-#CLI args
 TARGET:=memories/sp_ram
+TOP_LEVEL=sp_ram
 TARGET_PATH=${VERIFICATION_ROOT}/tb/${TARGET}
 VERBOSE:=0
 
-VERIF_SCRIPTS_ROOT = $(PWD)
+LDFLAGS := -Wl,-U,__Z15vl_time_stamp64v,-U,__Z13sc_time_stampv
 
 #Verilator
-VERILATOR_INPUT:=
-VERILATOR_CONFIG := 
-VERILATOR_FLAGS :=
-VERILATOR_CFLAGS := -CFLAGS "
-
-
 ifeq ($(VERILATOR_ROOT),)
 VERILATOR = verilator
 VERILATOR_COVERAGE = verilator_coverage
@@ -21,93 +15,69 @@ export VERILATOR_ROOT
 VERILATOR = $(VERILATOR_ROOT)/bin/verilator
 VERILATOR_COVERAGE = $(VERILATOR_ROOT)/bin/verilator_coverage
 endif
+ZLIB_PATH := /opt/homebrew/Cellar/zlib/1.3
+ZLIB_LIBS := -I${ZLIB_PATH}include -L${ZLIB_PATH}/lib -lz
+VERILATOR_INCS := -I /opt/homebrew/Cellar/zlib/1.3/include/ -I$(VERILATOR_ROOT)/include -I$(VERILATOR_ROOT)/include/vltstd
 
-# Generate C++ in executable form
-VERILATOR_FLAGS += --cc
+#compiler and flags
+CXX := g++
 
-# Generate makefile dependencies (not shown as complicates the Makefile)
-#VERILATOR_FLAGS += -MMD
-# Optimize
-VERILATOR_FLAGS += --x-assign 0
-# Warn abount lint issues; may not want this on less solid designs
-VERILATOR_FLAGS += -Wall
-# Make waveforms
-#VERILATOR_FLAGS += --trace
-# Check SystemVerilog assertions
-VERILATOR_FLAGS += --assert
-# Generate coverage analysis
-VERILATOR_FLAGS += --coverage
-# Run make to compile model, with as many CPUs as are free
-VERILATOR_FLAGS += --build -j
-# Run Verilator in debug mode
-#VERILATOR_FLAGS += --debug
-# Add this trace to get a backtrace in gdb
-#VERILATOR_FLAGS += --gdbbt
-
-#Compiler
-COMPILER := g++
-# COMPILER := clang++
-COMPILER_INPUT :=
-COMPILER_INCLUDES := -I${VERILATOR_ROOT}/include
-COMPILER_FLAGS := -std=c++20 -Og -g -Wall
-COMPILER_FLAGS += -march=native
-
-
+CFLAGS := -std=c++20 -Wall -faligned-new -Og -g -D__WORDSIZE=64 -march=native
 ifeq ($(VERBOSE),1)
-COMPILER_FLAGS+=-v
+CFLAGS+=-v
 endif
 
-#parse included makefile
+#
+VERILOG_SRC := 
+TB_SRCS :=
+TB_OBJS :=
+INCS :=
+VERILATOR_ARGS := -cc --Wall --build
+
+TARGET_WORK_DIR := ${TARGET_PATH}/work
+VERILATOR_OBJS := ./verilator_objs
+
 include ${TARGET_PATH}/makefile
 
-WORK_DIR = ${TARGET_PATH}/work
-LOG_DIR = ${TARGET_PATH}/log
-OUTPUT_VERILATOR_DIR = ${TARGET_PATH}/obj_dir
+VERILATOR_ARGS += --waiver-output $(TARGET_WORK_DIR)/verilator_waivers.vlt
+INCS +=  ${VERILATOR_INCS} ${ZLIB_LIBS} -I$(TARGET_WORK_DIR)
 
-#Pull in additional flags made from CLI args and included makefiles
-VERILATOR_CFLAGS += "
-VERILATOR_FLAGS += ${VERILATOR_CFLAGS}
-VERILATOR_FLAGS += --Mdir ${OUTPUT_VERILATOR_DIR}
-VERILATOR_FLAGS += --top ${VERILATOR_TARGET_NAME}
+TB_OBJS += $(patsubst %.cpp, $(TARGET_WORK_DIR)/%.o, $(notdir $(TB_SRCS)))
 
-#Setup compiler 
-COMPILER_INCLUDES += -I${TARGET_PATH}/obj_dir/
-# COMPILER_LINKER_LIBS :=  -lVsp_ram__ALL -L${TARGET_PATH}/obj_dir/
-COMPILER_INPUT += ${TARGET_PATH}/obj_dir/Vsp_ram__ALL.cpp
-COMPILER_FLAGS += -o ${TARGET_PATH}/obj_dir/${VERILATOR_TARGET_NAME}
-work:
-	mkdir -p ${WORK_DIR}
+all: $(TOP_LEVEL)
 
-verilate: work
-	@echo
-	@echo "-- VERILATE ----------------"
-	$(VERILATOR) --version
-	$(VERILATOR) ${VERILATOR_FLAGS} ${VERILATOR_CONFIG} ${VERILATOR_INPUT}
-
-run: verilate
-	@echo
-	@echo "-- COMPILE TB---------------"
-	${COMPILER} ${COMPILER_INCLUDES} ${COMPILER_INPUT} ${COMPILER_FLAGS} ${COMPILER_LINKER_LIBS}
-	@echo
-	@echo "-- RUN ---------------------"
-	@rm -rf ${LOG_DIR}
-	@mkdir -p ${LOG_DIR}
-	${OUTPUT_VERILATOR_DIR}/${VERILATOR_TARGET_NAME}
-	@echo
-	@echo "-- DONE --------------------"
+objs:
+	@ls ${TARGET_PATH}/tb_cpp/
+	@echo $(TB_OBJS)
+	@echo $(TB_SRCS)
 
 
-######################################################################
-# Other targets
+#Compile full object file for verilated objects
+$(TARGET_WORK_DIR)/V${TOP_LEVEL}__ALL.o: $(VERILOG_SRC)
+	@mkdir -p $(TARGET_WORK_DIR)
+	${VERILATOR} --top ${TOP_LEVEL} ${VERILATOR_ARGS} --Mdir $(TARGET_WORK_DIR) --prefix V$(notdir $(basename $<)) ${VERILATOR_CONFIG} $<
 
-show-config:
-	$(VERILATOR) -V
+$(VERILATOR_OBJS)/%.o: $(VERILATOR_ROOT)/include/%.cpp
+	@mkdir -p $(VERILATOR_OBJS)
+	$(CXX) $(CFLAGS) ${VERILATOR_INCS} -c $< -o $@
 
-genhtml:
-	@echo "-- GENHTML --------------------"
-	@echo "-- Note not installed by default, so not in default rule"
-	$(GENHTML) logs/coverage.info --output-directory logs/html
+VERILATOR_CPP_SOURCES := $(wildcard $(VERILATOR_ROOT)/include/*.cpp)
+VERILATOR_OBJ_FILES := $(patsubst %.cpp, $(VERILATOR_OBJS)/%.o, $(notdir $(VERILATOR_CPP_SOURCES)))
 
-maintainer-copy::
-clean mostlyclean distclean maintainer-clean::
-	cd ${TARGET_PATH};	rm -rf obj_dir logs *.log *.dmp *.vpd core;cd ${VERIF_SCRIPTS_ROOT}
+$(TOP_LEVEL): $(VERILATOR_OBJ_FILES) $(TARGET_WORK_DIR)/V${TOP_LEVEL}__ALL.o $(TB_OBJS)
+	$(CXX) $(CFLAGS) $(INCS) $(LDFLAGS) $^ -o ${TARGET_WORK_DIR}/$@
+
+run: $(TOP_LEVEL)
+	${TARGET_WORK_DIR}/$(TOP_LEVEL)
+
+clean_target:
+	rm -rf $(TARGET_WORK_DIR)
+clean_verilator:
+	rm -rf $(VERILATOR_OBJS)
+
+clean_common:
+	rm -rf ${VERIF_COMMON_ROOT}/**/objs
+
+clean: clean_target clean_verilator clean_common
+
+.PHONY: all run clean

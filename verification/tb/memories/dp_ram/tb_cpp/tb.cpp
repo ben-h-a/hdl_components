@@ -1,6 +1,6 @@
 #include "tbclock.h"
 #include "base_testbench.h"
-#include "verilated.h"
+#include <verilated.h>
 #include <verilated_vcd_c.h>
 #include <functional>
 #include "Vdp_ram.h"
@@ -62,14 +62,8 @@ public:
         this->m_core->W_EN_A = this->a_data[a_data_index].w_byte_enable;
         this->m_core->ADDR_A = this->a_data[a_data_index].address;
         this->a_data[a_data_index].r_data = this->m_core->R_DATA_A;
-        if (a_data[a_data_index].w_data != NULL)
-        {
-            this->m_core->W_DATA_A = this->a_data[a_data_index].w_data;
-        }
-        else
-        {
-            this->m_core->W_DATA_A = 0x0;
-        }
+        this->m_core->W_DATA_A = this->a_data[a_data_index].w_data;
+
         a_data_index++;
     }
 
@@ -88,14 +82,8 @@ public:
         this->m_core->W_EN_B = this->b_data[b_data_index].w_byte_enable;
         this->m_core->ADDR_B = this->b_data[b_data_index].address;
         this->b_data[b_data_index].r_data = this->m_core->R_DATA_B;
-        if (b_data[b_data_index].w_data != NULL)
-        {
-            this->m_core->W_DATA_B = this->b_data[b_data_index].w_data;
-        }
-        else
-        {
-            this->m_core->W_DATA_B = 0x0;
-        }
+        this->m_core->W_DATA_B = this->b_data[b_data_index].w_data;
+
         b_data_index++;
     }
 
