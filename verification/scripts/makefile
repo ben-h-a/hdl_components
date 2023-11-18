@@ -4,8 +4,8 @@ TARGET_PATH=${VERIFICATION_ROOT}/tb/${TARGET}
 VERBOSE:=0
 
 LDFLAGS := -Wl,-U,__Z15vl_time_stamp64v,-U,__Z13sc_time_stampv
+# LDFLAGS := -Wl,-U,__Z15vl_time_stamp64v,-U,__Z13sc_time_stampv
 
-#Verilator
 ifeq ($(VERILATOR_ROOT),)
 VERILATOR = verilator
 VERILATOR_COVERAGE = verilator_coverage
@@ -22,9 +22,9 @@ VERILATOR_INCS := -I /opt/homebrew/Cellar/zlib/1.3/include/ -I$(VERILATOR_ROOT)/
 #compiler and flags
 CXX := g++
 
-CFLAGS := -std=c++20 -Wall -faligned-new -Og -g -D__WORDSIZE=64 -march=native
+CFLAGS := -std=c++20 -Wall -Wextra -fdiagnostics-color=auto -faligned-new -Og -g -D__WORDSIZE=64 -march=native
 ifeq ($(VERBOSE),1)
-CFLAGS+=-v
+CFLAGS+= -v
 endif
 
 #
@@ -48,9 +48,9 @@ all: $(TOP_LEVEL)
 
 objs:
 	@ls ${TARGET_PATH}/tb_cpp/
+	@echo $(VERILATOR_OBJ_FILES)
+	@echo $(TARGET_WORK_DIR)/V${TOP_LEVEL}__ALL.o
 	@echo $(TB_OBJS)
-	@echo $(TB_SRCS)
-
 
 #Compile full object file for verilated objects
 $(TARGET_WORK_DIR)/V${TOP_LEVEL}__ALL.o: $(VERILOG_SRC)
@@ -61,9 +61,18 @@ $(VERILATOR_OBJS)/%.o: $(VERILATOR_ROOT)/include/%.cpp
 	@mkdir -p $(VERILATOR_OBJS)
 	$(CXX) $(CFLAGS) ${VERILATOR_INCS} -c $< -o $@
 
-VERILATOR_CPP_SOURCES := $(wildcard $(VERILATOR_ROOT)/include/*.cpp)
+# $(VERILATOR_OBJS)/%.o: $(VERILATOR_ROOT)/include/gtkwave/%.c
+# 	@mkdir -p $(VERILATOR_OBJS)
+# 	$(CXX) $(CFLAGS) ${VERILATOR_INCS} -c $< -o $@
+
+# VERILATOR_CPP_SOURCES := $(wildcard $(VERILATOR_ROOT)/include/gtkwave/*.c)
+# VERILATOR_OBJ_FILES := $(patsubst %.c, $(VERILATOR_OBJS)/%.o, $(notdir $(VERILATOR_CPP_SOURCES)))
+VERILATOR_CPP_SOURCES += $(wildcard $(VERILATOR_ROOT)/include/*.cpp)
 VERILATOR_OBJ_FILES := $(patsubst %.cpp, $(VERILATOR_OBJS)/%.o, $(notdir $(VERILATOR_CPP_SOURCES)))
 
+$(info VERILATOR_OBJ_FILES: $(VERILATOR_OBJ_FILES))
+$(info TB_OBJS: $(TB_OBJS))
+$(info TARGET_WORK_DIR: $(TARGET_WORK_DIR))
 $(TOP_LEVEL): $(VERILATOR_OBJ_FILES) $(TARGET_WORK_DIR)/V${TOP_LEVEL}__ALL.o $(TB_OBJS)
 	$(CXX) $(CFLAGS) $(INCS) $(LDFLAGS) $^ -o ${TARGET_WORK_DIR}/$@
 

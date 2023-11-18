@@ -27,8 +27,11 @@ private:
 public:
     bool a_data_complete;
     bool b_data_complete;
-    ~DpSramTestbench();
-    DpSramTestbench();
+    // Default constructor
+    DpSramTestbench() {}
+
+    // Destructor
+    ~DpSramTestbench() {}
     DpSramTestbench(Vdp_ram *top_core,
                     unsigned int a_clk_period,
                     unsigned int b_clk_period,
@@ -43,6 +46,8 @@ public:
         {
             this->assign_b_clk_rise();
         };
+        a_data_complete = false;
+        b_data_complete = false;
         TbClock a_clk = TbClock(a_clk_period, clk_a_rise_lambda, []() {});
         TbClock b_clk = TbClock(b_clk_period, clk_b_rise_lambda, []() {});
     }
@@ -172,8 +177,5 @@ int main(int argc, char **argv, char **env)
     {
         printf("PASS\n");
     }
-
-    delete tb;
-    tb = NULL;
     exit(0);
 }

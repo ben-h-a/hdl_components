@@ -13,6 +13,8 @@
 
 #include "tbclock.h"
 
+TbClock::TbClock() {}
+
 TbClock::TbClock(
     unsigned int period_ps,
     std::function<void()> changed_callback_rising,

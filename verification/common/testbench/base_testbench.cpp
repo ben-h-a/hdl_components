@@ -15,7 +15,7 @@
 
 #include "base_testbench.h"
 
-template <typename T>
+template <class T>
 BaseTestbench<T>::BaseTestbench(T *top_core, VerilatedVcdC *m_trace)
 {
     this->m_core = top_core;
@@ -23,7 +23,7 @@ BaseTestbench<T>::BaseTestbench(T *top_core, VerilatedVcdC *m_trace)
     this->m_trace = m_trace;
 }
 
-template <typename T>
+template <class T>
 BaseTestbench<T>::BaseTestbench(T *top_core, std::vector<TbClock> clocks, VerilatedVcdC *m_trace)
 {
     this->clocks = clocks;
@@ -32,32 +32,32 @@ BaseTestbench<T>::BaseTestbench(T *top_core, std::vector<TbClock> clocks, Verila
     this->m_trace = m_trace;
 }
 
-template <typename T>
+template <class T>
 BaseTestbench<T>::~BaseTestbench()
 {
 }
 
-template <typename T>
+template <class T>
 void BaseTestbench<T>::add_clock(TbClock clock)
 {
     this->clocks.pushback(clock);
 }
 
-template <typename T>
+template <class T>
 void BaseTestbench<T>::eval()
 {
     m_core->eval();
 }
 
 // Empty virtual method
-// template <typename T>
+// template <class T>
 // void BaseTestbench<T>::clk_assign()
 // {
 //     // This method can be overridden by derived classes
 //     // It takes no arguments and has an empty implementation here
 // }
 
-template <typename T>
+template <class T>
 void BaseTestbench<T>::tick()
 {
     uint32_t mintime = UINT32_MAX;

@@ -19,15 +19,16 @@ class TbClock
     unsigned long m_increment_ps;
     unsigned long m_now_ps;
     unsigned long m_last_edge_ps;
-    std::function<void()> changed_callback_rising;
-    std::function<void()> changed_callback_falling;
 
 public:
+    TbClock();
     TbClock(
         unsigned int period_ps,
         std::function<void()> changed_callback_rising = []() {},
         std::function<void()> changed_callback_falling = []() {});
     ~TbClock();
+    std::function<void()> changed_callback_rising;
+    std::function<void()> changed_callback_falling;
     unsigned long time_to_tick(void);
     void set_interval_ps(unsigned long interval_ps);
     int advance(unsigned long itime);

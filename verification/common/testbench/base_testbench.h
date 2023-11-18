@@ -15,7 +15,15 @@
 
 #ifndef _BASE_TESTBENCH_H_
 #define _BASE_TESTBENCH_H_
+
+#ifdef TRACE_FST
+#define TRACECLASS VerilatedFstC
+#include <verilated_fst_c.h>
+#else // TRACE_FST
+#define TRACECLASS VerilatedVcdC
 #include <verilated_vcd_c.h>
+#endif
+
 #include <stdint.h>
 #include <vector>
 #include "tbclock.h"
@@ -28,9 +36,10 @@ public:
     std::vector<TbClock> clocks;
     int num_clocks;
     T *m_core;
-    VerilatedVcdC *m_trace;
+    TRACECLASS *m_trace;
     bool m_changed;
     uint32_t time_ps;
+    BaseTestbench();
     BaseTestbench(T *top_core, VerilatedVcdC *m_trace = NULL)
     {
         this->m_core = top_core;
@@ -54,12 +63,15 @@ public:
         m_core->eval();
     }
     // Empty virtual method
-    virtual void clk_assign();
+    virtual void clk_assign()
+    {
+        return;
+    };
     void tick()
     {
         uint32_t mintime = UINT32_MAX;
 
-        for (int i = 0; i < this->clocks.size(); i++)
+        for (int i = 0; i < (int)this->clocks.size(); i++)
         {
             if (clocks[i].time_to_tick() < mintime)
             {
@@ -83,27 +95,32 @@ public:
             m_trace->flush();
         }
 
-        for (int i = 0; i < this->clocks.size(); i++)
+        for (int i = 0; i < (int)this->clocks.size(); i++)
         {
             if (clocks[i].falling_edge())
             {
-                if (clocks[i].changed_callback_falling() != nullptr)
-                {
-                    clocks[i].changed_callback_falling();
-                }
+                clocks[i].changed_callback_falling();
             }
         }
 
-        for (int i = 0; i < this->clocks.size(); i++)
+        for (int i = 0; i < (int)this->clocks.size(); i++)
         {
             if (clocks[i].rising_edge())
             {
-                if (clocks[i].changed_callback_rising() != nullptr)
-                {
-                    clocks[i].changed_callback_rising();
-                }
+                clocks[i].changed_callback_rising();
             }
         }
     }
 };
+
+template <class T>
+BaseTestbench<T>::BaseTestbench()
+{
+    // Initialize members in the constructor
+    num_clocks = 0;
+    m_core = nullptr;
+    m_trace = nullptr;
+    m_changed = false;
+    time_ps = 0;
+}
 #endif //_BASE_TESTBENCH_H_

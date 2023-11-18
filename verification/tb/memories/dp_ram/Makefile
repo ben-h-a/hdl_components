@@ -11,7 +11,7 @@ INCS += ${COMMON_CLOCKING_INCS}
 INCS += ${COMMON_TB_INCS}
 
 VERILATOR_CONFIG += ${TARGET_PATH}/verilator_config.vlt
-VERILOG_SRC += ${LOGICAL_ROOT}/memories/dp_ram.sv 
+VERILOG_SRC += ${LOGICAL_ROOT}/memories/dp_ram.sv
 VERILATOR_FLAGS += --clk CLKA
 VERILATOR_FLAGS += --clk CLKB
 
@@ -20,6 +20,6 @@ TB_SRCS += ${TARGET_PATH}/tb_cpp/tb.cpp
 
 $(TARGET_WORK_DIR)/%.o: ${TARGET_PATH}/tb_cpp/%.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CFLAGS)  $(INCS) ${COMMON_CLOCKING_INCS} $(COMMON_TB_INCS)-c $< -o $@
+	$(CXX) $(CFLAGS) $(INCS) ${COMMON_CLOCKING_INCS} $(COMMON_TB_INCS) -c $< -o $@
 
 VERILATOR_TARGET_NAME=dp_ram
