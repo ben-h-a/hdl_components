@@ -24,6 +24,9 @@ private:
     unsigned int b_data_len;
     unsigned int b_data_index;
 
+    TbClock clk_a;
+    TbClock clk_b;
+
 public:
     bool a_data_complete;
     bool b_data_complete;
@@ -42,14 +45,25 @@ public:
         {
             this->assign_a_clk_rise();
         };
+        auto clk_a_fall_lambda = [this]()
+        {
+            return;
+        };
         auto clk_b_rise_lambda = [this]()
         {
             this->assign_b_clk_rise();
         };
+        auto clk_b_fall_lambda = [this]()
+        {
+            return;
+        };
         a_data_complete = false;
         b_data_complete = false;
-        TbClock a_clk = TbClock(a_clk_period, clk_a_rise_lambda, []() {});
-        TbClock b_clk = TbClock(b_clk_period, clk_b_rise_lambda, []() {});
+        m_core = top_core;
+        clk_a = TbClock(a_clk_period, clk_a_rise_lambda, clk_a_fall_lambda);
+        clk_b = TbClock(b_clk_period, clk_b_rise_lambda, clk_b_fall_lambda);
+        add_clock(clk_a);
+        add_clock(clk_b);
     }
 
     void assign_a_clk_rise()
@@ -104,6 +118,11 @@ public:
         b_data_len = len;
         b_data_index = 0;
     }
+    void clk_assign(uint32_t itime)
+    {
+        m_core->CLK_A = clk_a.advance(itime);
+        m_core->CLK_B = clk_b.advance(itime);
+    }
 };
 
 int main(int argc, char **argv, char **env)
@@ -121,8 +140,11 @@ int main(int argc, char **argv, char **env)
     Verilated::traceEverOn(true);
     Verilated::commandArgs(argc, argv);
     Verilated::mkdir("logs");
-
-    DpSramTestbench *tb = new DpSramTestbench();
+    Vdp_ram *top = new Vdp_ram;
+    DpSramTestbench *tb = new DpSramTestbench(top, 1000, 2000);
+#ifdef VCD_FILE
+    tb->trace(VCD_FILE);
+#endif
     SramData data_a;
     SramData data_b;
     uint32_t w_data_comp;

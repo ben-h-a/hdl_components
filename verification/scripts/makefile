@@ -1,10 +1,13 @@
+#CLI args
 TARGET:=memories/sp_ram
 TOP_LEVEL=sp_ram
 TARGET_PATH=${VERIFICATION_ROOT}/tb/${TARGET}
 VERBOSE:=0
+DEBUG:=0
+DEFAULT_EXEC_NAME:=tb_exec
+VCD:=
 
-LDFLAGS := -Wl,-U,__Z15vl_time_stamp64v,-U,__Z13sc_time_stampv
-# LDFLAGS := -Wl,-U,__Z15vl_time_stamp64v,-U,__Z13sc_time_stampv
+
 
 ifeq ($(VERILATOR_ROOT),)
 VERILATOR = verilator
@@ -22,17 +25,23 @@ VERILATOR_INCS := -I /opt/homebrew/Cellar/zlib/1.3/include/ -I$(VERILATOR_ROOT)/
 #compiler and flags
 CXX := g++
 
+LDFLAGS := -Wl,-U,__Z15vl_time_stamp64v,-U,__Z13sc_time_stampv
 CFLAGS := -std=c++20 -Wall -Wextra -fdiagnostics-color=auto -faligned-new -Og -g -D__WORDSIZE=64 -march=native
 ifeq ($(VERBOSE),1)
 CFLAGS+= -v
 endif
-
+ifeq ($(DEBUG),1)
+CFLAGS+= -g
+endif
+ifneq ($(VCD),)
+CFLAGS+= -DVCD_FILE=\"$(VCD)\"
+endif
 #
 VERILOG_SRC := 
 TB_SRCS :=
 TB_OBJS :=
 INCS :=
-VERILATOR_ARGS := -cc --Wall --build
+VERILATOR_ARGS := -cc --Wall --build --trace
 
 TARGET_WORK_DIR := ${TARGET_PATH}/work
 VERILATOR_OBJS := ./verilator_objs
@@ -74,10 +83,10 @@ $(info VERILATOR_OBJ_FILES: $(VERILATOR_OBJ_FILES))
 $(info TB_OBJS: $(TB_OBJS))
 $(info TARGET_WORK_DIR: $(TARGET_WORK_DIR))
 $(TOP_LEVEL): $(VERILATOR_OBJ_FILES) $(TARGET_WORK_DIR)/V${TOP_LEVEL}__ALL.o $(TB_OBJS)
-	$(CXX) $(CFLAGS) $(INCS) $(LDFLAGS) $^ -o ${TARGET_WORK_DIR}/$@
+	$(CXX) $(CFLAGS) $(INCS) $(LDFLAGS) $^ -o ${TARGET_WORK_DIR}/${DEFAULT_EXEC_NAME}
 
 run: $(TOP_LEVEL)
-	${TARGET_WORK_DIR}/$(TOP_LEVEL)
+	${TARGET_WORK_DIR}/$(DEFAULT_EXEC_NAME)
 
 clean_target:
 	rm -rf $(TARGET_WORK_DIR)

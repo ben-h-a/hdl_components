@@ -39,12 +39,15 @@ public:
     TRACECLASS *m_trace;
     bool m_changed;
     uint32_t time_ps;
+    bool pause_trace;
     BaseTestbench();
     BaseTestbench(T *top_core, VerilatedVcdC *m_trace = NULL)
     {
         this->m_core = top_core;
         this->m_changed = false;
         this->m_trace = m_trace;
+        pause_trace = false;
+        time_ps = 0;
     }
     BaseTestbench(T *top_core, std::vector<TbClock> clocks, VerilatedVcdC *m_trace = NULL)
     {
@@ -52,18 +55,48 @@ public:
         this->m_core = top_core;
         this->m_changed = false;
         this->m_trace = m_trace;
+        pause_trace = false;
+        time_ps = 0;
     }
     ~BaseTestbench();
     void add_clock(TbClock clock)
     {
-        this->clocks.pushback(clock);
+        clocks.push_back(clock);
+    }
+
+    virtual void opentrace(const char *vcdname, int depth = 99)
+    {
+        if (!m_trace)
+        {
+            m_trace = new TRACECLASS;
+            m_core->trace(m_trace, 99);
+            m_trace->spTrace()->set_time_resolution("ps");
+            m_trace->spTrace()->set_time_unit("ps");
+            m_trace->open(vcdname);
+            pause_trace = false;
+        }
+    }
+
+    virtual void closetrace(void)
+    {
+        if (m_trace)
+        {
+            m_trace->close();
+            delete m_trace;
+            m_trace = NULL;
+        }
+    }
+
+    void trace(const char *vcdname)
+    {
+        opentrace(vcdname);
     }
     virtual void eval()
     {
         m_core->eval();
     }
     // Empty virtual method
-    virtual void clk_assign()
+    virtual void clk_assign(uint32_t itime)
     {
         return;
     };
@@ -71,31 +104,32 @@ public:
     {
         uint32_t mintime = UINT32_MAX;
 
-        for (int i = 0; i < (int)this->clocks.size(); i++)
+        for (int i = 0; i < (int)clocks.size(); i++)
         {
-            if (clocks[i].time_to_tick() < mintime)
+            uint32_t time_to_tick = clocks[i].time_to_tick();
+            if (time_to_tick < mintime)
             {
-                mintime = clocks[i].time_to_tick();
+                mintime = time_to_tick;
             }
         }
         assert(mintime > 1);
-        this->eval();
+        eval();
 
         if (m_trace)
             m_trace->dump(time_ps + 1);
 
-        this->clk_assign();
+        clk_assign(mintime);
 
         time_ps += mintime;
 
-        this->eval();
+        eval();
         if (m_trace)
         {
             m_trace->dump(time_ps + 1);
             m_trace->flush();
         }
 
-        for (int i = 0; i < (int)this->clocks.size(); i++)
+        for (int i = 0; i < (int)clocks.size(); i++)
         {
             if (clocks[i].falling_edge())
             {
@@ -103,7 +137,7 @@ public:
             }
         }
 
-        for (int i = 0; i < (int)this->clocks.size(); i++)
+        for (int i = 0; i < (int)clocks.size(); i++)
         {
             if (clocks[i].rising_edge())
             {
@@ -122,5 +156,9 @@ BaseTestbench<T>::BaseTestbench()
     m_trace = nullptr;
     m_changed = false;
     time_ps = 0;
+}
+template <class T>
+BaseTestbench<T>::~BaseTestbench()
+{
 }
 #endif //_BASE_TESTBENCH_H_
