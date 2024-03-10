@@ -12,6 +12,10 @@
 -----------------------------------------------------------------------------*/
 
 #include "tbclock.h"
+#include <exception>
+#include <stdexcept>
+#include <iostream>
+
 
 TbClock::TbClock() {}
 
@@ -21,8 +25,8 @@ TbClock::TbClock(
     std::function<void()> changed_callback_falling)
 {
     m_increment_ps = period_ps;
-    m_now_ps = m_increment_ps + 1;
-    m_last_edge_ps = m_increment_ps;
+    m_now_ps = 0;
+    m_last_edge_ps = 0;
     this->changed_callback_rising = changed_callback_rising;
     this->changed_callback_falling = changed_callback_falling;
 }
@@ -32,45 +36,32 @@ TbClock::~TbClock()
 
 unsigned long TbClock::time_to_tick(void)
 {
-    unsigned long ul;
-    if (m_last_edge_ps > m_now_ps)
+    if (m_now_ps < m_last_edge_ps)
     {
-        // Should never happen
-        ul = m_last_edge_ps - m_now_ps;
-        ul /= m_increment_ps;
-        ul = m_now_ps + ul * m_increment_ps;
+        throw std::runtime_error(std::string("time %d < last edge %d", m_now_ps, m_last_edge_ps));
     }
-    else if (m_last_edge_ps == m_now_ps)
-    {
-        ul = m_increment_ps;
-    }
-    else if (m_last_edge_ps + m_increment_ps == m_now_ps)
-    {
-        ul = m_increment_ps;
-    }
-    else if (m_last_edge_ps + m_increment_ps > m_now_ps)
-    {
-        ul = m_last_edge_ps + m_increment_ps - m_now_ps;
-    }
-    else // if (m_last_edge + m_interval_ps > m_now) {
-        ul = (m_last_edge_ps + 2 * m_increment_ps - m_now_ps);
-
-    return ul;
+    return m_increment_ps - (m_now_ps - m_last_edge_ps);
 }
 
 int TbClock::advance(unsigned long itime)
 {
     int clk = 0;
     m_now_ps += itime;
-    if (m_now_ps >= m_last_edge_ps + 2 * m_increment_ps)
+    // full period
+    if (m_now_ps >= m_last_edge_ps + (2 * m_increment_ps))
     {
-        m_last_edge_ps += 2 * m_increment_ps;
         clk = 1;
     }
+    // half period
     else if (m_now_ps >= m_last_edge_ps + m_increment_ps)
+    {
         clk = 0;
+    }
     else
+    {
         clk = 1;
+    }
+    m_last_edge_ps += m_increment_ps;
     return clk;
 }
 
