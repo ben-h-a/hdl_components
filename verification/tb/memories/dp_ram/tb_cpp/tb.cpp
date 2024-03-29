@@ -1,9 +1,9 @@
 #include "tbclock.h"
 #include "base_testbench.h"
+#include "Vdp_ram.h"
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 #include <functional>
-#include "Vdp_ram.h"
 
 typedef struct
 {

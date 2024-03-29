@@ -11,11 +11,12 @@ set(LOGICAL_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../logical)
 set(COMMON_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/common)
 set(COMMON_CLOCKING ${COMMON_ROOT}/clocking)
 set(COMMON_TESTBENCH ${COMMON_ROOT}/testbench)
+set(VERIATOR_DEFAULT_ARGS -Wall --Wno-fatal --sv)
 
 find_package(verilator HINTS $ENV{VERILATOR_ROOT} ${VERILATOR_ROOT})
 
 
-set(VERILATOR_DEFAULT_ARGS "")
+# set(VERILATOR_DEFAULT_ARGS "--main --timing")
 
 add_subdirectory(common/clocking)
 add_subdirectory(common/testbench)

@@ -12,11 +12,12 @@
 // Email: mail@bhallen.co.uk
 //
 -----------------------------------------------------------------------------*/
-
+#include <stdint.h>
+#include <vector>
 #include "base_testbench.h"
 
 template <class T>
-BaseTestbench<T>::BaseTestbench(T *top_core, VerilatedVcdC *m_trace)
+BaseTestbench<T>::BaseTestbench(T *top_core, VerilatedVcdC *m_trace = NULL)
 {
     this->m_core = top_core;
     this->m_changed = false;
@@ -24,7 +25,7 @@ BaseTestbench<T>::BaseTestbench(T *top_core, VerilatedVcdC *m_trace)
 }
 
 template <class T>
-BaseTestbench<T>::BaseTestbench(T *top_core, std::vector<TbClock> clocks, VerilatedVcdC *m_trace)
+BaseTestbench<T>::BaseTestbench(T *top_core, std::vector<TbClock> clocks, VerilatedVcdC *m_trace = NULL)
 {
     this->clocks = clocks;
     this->m_core = top_core;
