@@ -29,6 +29,12 @@ logic arb_err;
 assign arb_err = (ADDR_A == ADDR_B) & (W_EN_A & W_EN_B);
 assign ARBITRATION_ERR = arb_err;
 
+initial begin
+    for(int i=0; i<DEPTH; i=i+1) begin
+        mem[i] = '0;
+    end
+end
+
 //------
 //A
 //------
@@ -42,7 +48,7 @@ for(genvar i=1; i<=_WEN_WIDTH; i=i+1) begin:g_mem_a
     end
 end
 
-assign R_DATA_A = RST_N ? mem[ADDR_A] : '0;
+assign R_DATA_A = mem[ADDR_A];
 //------
 //B
 //------
@@ -56,6 +62,6 @@ for(genvar i=1; i<=_WEN_WIDTH; i=i+1) begin:g_mem_b
     end
 end
 
-assign R_DATA_B = RST_N ? mem[ADDR_B] : '0;
+assign R_DATA_B = mem[ADDR_B];
 
 endmodule
