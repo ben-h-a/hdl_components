@@ -17,16 +17,18 @@
 #include <iostream>
 
 
+
 TbClock::TbClock() {}
 
 TbClock::TbClock(
-    unsigned int period_ps,
+    unsigned int half_period_ps,
     std::function<void()> changed_callback_rising,
     std::function<void()> changed_callback_falling)
 {
-    m_increment_ps = period_ps;
+    m_increment_ps = half_period_ps;
     m_now_ps = 0;
     m_last_edge_ps = 0;
+    clk = 0;
     this->changed_callback_rising = changed_callback_rising;
     this->changed_callback_falling = changed_callback_falling;
 }
@@ -40,28 +42,26 @@ unsigned long TbClock::time_to_tick(void)
     {
         throw std::runtime_error(std::string("time %d < last edge %d", m_now_ps, m_last_edge_ps));
     }
-    return m_increment_ps - (m_now_ps - m_last_edge_ps);
+    if(m_now_ps - m_last_edge_ps < m_increment_ps){
+        return (m_increment_ps - (m_now_ps - m_last_edge_ps));
+    }
+    return ((2*m_increment_ps) - (m_now_ps - m_last_edge_ps));
 }
 
 int TbClock::advance(unsigned long itime)
 {
-    int clk = 0;
     m_now_ps += itime;
     // full period
-    if (m_now_ps >= m_last_edge_ps + (2 * m_increment_ps))
+    if (m_now_ps == m_last_edge_ps + (2 * m_increment_ps))
     {
         clk = 1;
+        m_last_edge_ps += m_increment_ps*2;
     }
     // half period
-    else if (m_now_ps >= m_last_edge_ps + m_increment_ps)
+    else if (m_now_ps == m_last_edge_ps + m_increment_ps)
     {
         clk = 0;
     }
-    else
-    {
-        clk = 1;
-    }
-    m_last_edge_ps += m_increment_ps;
     return clk;
 }
 

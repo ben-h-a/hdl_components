@@ -21,6 +21,7 @@ class TbClock
     unsigned long m_last_edge_ps;
 
 public:
+    int clk;
     TbClock();
     TbClock(
         unsigned int period_ps,
