@@ -15,3 +15,6 @@ export VERIF_COMMON_ROOT=$VERIFICATION_ROOT/common
 
 alias @tb "cd $TB_SCRIPTS_ROOT"
 alias @root "cd $PROJECT_ROOT"
+
+pip install cocotb
+pip install pytest
