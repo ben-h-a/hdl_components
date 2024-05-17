@@ -3,9 +3,11 @@ import random
 from math import log2
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge, RisingEdge, Timer
+from cocotb.binary import BinaryValue
 
 if cocotb.simulator.is_running():
     DATA_W = int(cocotb.top.DATA_WIDTH.value)
+
     DEPTH = int(cocotb.top.DEPTH.value)
 
 
@@ -50,32 +52,33 @@ async def read_fifo(dut):
 
 
 
-# @cocotb.test()
-# async def fifo_single_rw(dut):
+@cocotb.test()
+async def fifo_single_rw(dut):
 
-#     dut.RST_N.value = 0
-#     cocotb.start_soon(Clock(dut.CLK_W, 10, units="ns").start())
-#     cocotb.start_soon(Clock(dut.CLK_R, 15, units="ns").start())
+    dut.RST_N.value = 0
+    cocotb.start_soon(Clock(dut.CLK_W, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.CLK_R, 15, units="ns").start())
 
-#     await Timer(5, units="ns")  # wait a bit
-#     dut.RST_N.value = 1
+    await Timer(5, units="ns")  # wait a bit
+    dut.RST_N.value = 1
 
-#     wdata_lst = []
-#     rdata_lst = []
-#     #-----------------
-#     #test single write/read
-#     #-----------------
-#     assert dut.EMPTY.value == 1, f"EMPTY not asserted after {DEPTH} writes!"
-#     wdata = random.randint(0, (2^DATA_W)-1)
-#     await write_fifo(dut, wdata)
-#     await RisingEdge(dut.CLK_R)
-#     assert dut.EMPTY.value == 0, f"EMPTY not cleared after write!"
+    wdata_lst = []
+    rdata_lst = []
+    #-----------------
+    #test single write/read
+    #-----------------
+    assert dut.EMPTY.value == 1, f"EMPTY not asserted after {DEPTH} writes!"
+    wdata = random.randint(0, (2^DATA_W)-1)
+    await write_fifo(dut, wdata)
+    await RisingEdge(dut.CLK_R)
+    await RisingEdge(dut.CLK_R)
+    assert dut.EMPTY.value == 0, f"EMPTY not cleared after write!"
 
 
-#     rdata = await read_fifo(dut)
-#     await RisingEdge(dut.CLK_R)
-#     assert dut.EMPTY.value == 1, f"EMPTY not asserted after read"
-#     assert wdata == rdata, f"W data != R data: {wdata} != {rdata}"
+    rdata = await read_fifo(dut)
+    await RisingEdge(dut.CLK_R)
+    assert dut.EMPTY.value == 1, f"EMPTY not asserted after read"
+    assert wdata == rdata, f"W data != R data: {wdata} != {rdata}"
 
 
 @cocotb.test()
@@ -92,45 +95,69 @@ async def fifo_full_rw(dut):
     #-----------------
     #Write to full
     #-----------------
-    for cnt in range(DEPTH+1):
+    print(f"Write {DEPTH}")
+    for cnt in range(DEPTH-1):
         wdata = random.randint(0, (2^DATA_W)-1)
-        wdata_lst.append(wdata)
+        wdata_lst.append(BinaryValue(wdata))
         
         await write_fifo(dut, wdata)
-    # assert dut.FULL.value == 1, f"FULL not asserted after {DEPTH} writes!"
+        assert dut.FULL.value == 0, f"FULL asserted too early on {cnt} read"
+    print("wait edges")
+    for cnt in range(5):
+        await RisingEdge(dut.CLK_W)
+    assert dut.FULL.value == 0, f"FULL asserted too early!"
+
+    wdata = random.randint(0, (2^DATA_W)-1)
+    wdata_lst.append(BinaryValue(wdata))
+    await write_fifo(dut, wdata)
+    await RisingEdge(dut.CLK_W)
+    assert dut.FULL.value == 1, f"FULL not asserted after {DEPTH} writes!"
 
     rdata = await read_fifo(dut)
     rdata_lst.append(rdata)
-    # assert dut.FULL.value == 0, f"FULL not cleared after write"
-    # assert rdata == wdata_lst[0], f"R data != W data 0: {rdata} != {wdata_lst[0]}"
+    await RisingEdge(dut.CLK_W)
+    await RisingEdge(dut.CLK_W)
+    assert dut.FULL.value == 0, f"FULL not cleared after write"
+    assert rdata == wdata_lst[0], f"R data != W data 0: {rdata} != {wdata_lst[0]}"
 
     #-----------------
     #Read to empty
     #-----------------
-    for cnt in range(DEPTH-1):
+    for cnt in range(DEPTH-2):
         rdata = await read_fifo(dut)
         rdata_lst.append(rdata)
+        await RisingEdge(dut.CLK_R)
+        assert dut.EMPTY.value == 0, f"EMPTY asserted too early on {cnt} read"
+    
+    print("wait edges")
+    for cnt in range(5):
+        await RisingEdge(dut.CLK_R)
+    assert dut.EMPTY.value == 0, f"FULL asserted too early!"
+
+    rdata = await read_fifo(dut)
+    rdata_lst.append(rdata)
     await RisingEdge(dut.CLK_R)
-    # assert dut.EMPTY.value == 1, f"EMPTY not asserted after read"
-    # assert rdata_lst == wdata_lst, f"Read and write lists are not equal!"
+    assert dut.EMPTY.value == 1, f"EMPTY not asserted after read"
+    
+    assert rdata_lst == wdata_lst, f"Read and write lists are not equal!"
 
-# @cocotb.test()
-# async def fifo_reset_test(dut):
-#     dut.RST_N.value = 0
-#     cocotb.start_soon(Clock(dut.CLK_W, 10, units="ns").start())
-#     cocotb.start_soon(Clock(dut.CLK_R, 15, units="ns").start())
+@cocotb.test()
+async def fifo_reset_test(dut):
+    dut.RST_N.value = 0
+    cocotb.start_soon(Clock(dut.CLK_W, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.CLK_R, 15, units="ns").start())
 
-#     await Timer(5, units="ns")  # wait a bit
-#     dut.RST_N.value = 1
+    await Timer(5, units="ns")  # wait a bit
+    dut.RST_N.value = 1
 
-#     await write_fifo(dut, 1)
-#     await RisingEdge(dut.CLK_R)
-#     await RisingEdge(dut.CLK_R)
-#     assert dut.EMPTY.value == 0, "Not EMPTY after reset"
+    await write_fifo(dut, 1)
+    await RisingEdge(dut.CLK_R)
+    await RisingEdge(dut.CLK_R)
+    assert dut.EMPTY.value == 0, "Not EMPTY after reset"
 
-#     await Timer(5, units="ns")  # wait a bit
-#     dut.RST_N.value = 0
-#     await FallingEdge(dut.CLK_R)
-#     dut.RST_N.value = 1
+    await Timer(5, units="ns")  # wait a bit
+    dut.RST_N.value = 0
+    await FallingEdge(dut.CLK_R)
+    dut.RST_N.value = 1
 
-#     assert dut.EMPTY.value == 1, "Not EMPTY after reset"
+    assert dut.EMPTY.value == 1, "Not EMPTY after reset"
