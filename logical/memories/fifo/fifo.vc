@@ -1,4 +1,2 @@
--F $DESIGN_CELLS_LOGICAL_ROOT/grey_code/grey_code.vc
-fifo_addr_ctrl_grey.sv
-fifo_addr_gen_grey.sv
+../dp_ram.sv
 fifo.sv

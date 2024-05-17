@@ -1,6 +1,6 @@
 module tb #(
     parameter DATA_WIDTH = 8,
-    parameter DEPTH = 4'hF
+    parameter DEPTH = 8
 ) (
     input CLK_W,
     input CLK_R,

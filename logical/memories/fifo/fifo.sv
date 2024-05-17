@@ -1,6 +1,6 @@
 module fifo #(
     parameter DATA_WIDTH = 8,
-    parameter DEPTH = 4'hF
+    parameter DEPTH_LOG2 = 4
 ) (
     input CLK_W,
     input CLK_R,
@@ -15,62 +15,61 @@ module fifo #(
     output FULL,
     output EMPTY
 );
-    localparam  _addr_width = $clog2(DEPTH);
+    localparam  _addr_width = DEPTH_LOG2-1;
 
-    logic [_addr_width-1:0] w_addr;
-    logic [_addr_width-1:0] w_addr_nxt;
-    logic [_addr_width-1:0] r_addr;
-    logic [_addr_width-1:0] r_addr_q;
+    logic [_addr_width:0] w_addr;
+    logic [_addr_width:0] w_addr_nxt;
+    logic [_addr_width:0] w_addr_prv;
+    logic [_addr_width:0] r_addr;
+    logic [_addr_width:0] r_addr_nxt;
+    logic [_addr_width:0] r_addr_prv;
 
     logic full_q;
     logic empty_q;
 
-    logic full_comb;
-    logic empty_comb;
-
-    assign full_comb = w_addr_nxt == r_addr_q;
-    assign empty_comb = r_addr == w_addr;
-
     always @(posedge CLK_W or negedge RST_N) begin
         if(!RST_N) begin
             w_addr <= '0;
-            w_addr_nxt <= '1;
+            w_addr_nxt <= 1;
+            w_addr_prv <= '1;
             full_q <= '0;
         end else begin
-            if(WEN && !full_comb) begin
-                if(w_addr_nxt >= DEPTH-1) begin
-                    w_addr_nxt <= '0;
-                end else begin
-                    w_addr_nxt <= w_addr_nxt + 1;
-                end
+            if(WEN && !full_q) begin
+                w_addr_nxt <= w_addr_nxt + 1;
                 w_addr <= w_addr_nxt;
+                w_addr_prv <= w_addr;
+                //assert full on write transaction
+                full_q <= w_addr_nxt == r_addr;
             end
-            full_q <= full_comb;
+            if(full_q) begin
+                full_q <= w_addr == r_addr;
+            end
         end
     end
 
     always @(posedge CLK_R or negedge RST_N) begin
         if(!RST_N) begin
             r_addr <= '0;
-            //REVISIT: Verilator doesnt handle this
-            r_addr_q <= DEPTH-1; 
-
+            r_addr_nxt <= 1;
+            r_addr_prv <= '1;
             empty_q <= '1;
         end else begin
-            if(REN && !empty_comb) begin
-                if(r_addr >= DEPTH-1) begin
-                    r_addr <= '0;
-                end else begin
-                    r_addr <= r_addr + 1;
+            if(REN && !empty_q) begin
+                r_addr_nxt <= r_addr_nxt + 1;
+                r_addr <= r_addr_nxt;
+                r_addr_prv <= r_addr;
+
+                empty_q <= r_addr_nxt == w_addr;
+            end else begin
+                if(empty_q) begin
+                    empty_q <= r_addr == w_addr;
                 end
-                r_addr_q <= r_addr;
             end
-            empty_q <= empty_comb;
         end
     end
 
     dp_ram #(
-        .DEPTH(DEPTH),
+        .DEPTH(2**DEPTH_LOG2),
         .WIDTH(DATA_WIDTH),
         .STRB_WIDTH(DATA_WIDTH)
     )
