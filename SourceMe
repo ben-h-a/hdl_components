@@ -1,8 +1,8 @@
 #!/bin/zsh
 
 #tool variables
-export VERILATOR_ROOT=/Users/benallen/Applications/verilator/git_main/verilator
-export PATH=$VERILATOR_ROOT/bin:$PATH
+# export VERILATOR_ROOT=/Users/benallen/Applications/verilator/git_main/verilator
+# export PATH=$VERILATOR_ROOT/bin:$PATH
 #Project env variables
 export PROJECT_ROOT=$PWD
 export LOGICAL_ROOT=$PROJECT_ROOT/logical
@@ -12,9 +12,12 @@ export VERIFICATION_ROOT=$PROJECT_ROOT/verification
 export TB_SCRIPTS_ROOT=$VERIFICATION_ROOT/scripts
 export TB_TARGETS_ROOT=$VERIFICATION_ROOT/tb
 export VERIF_COMMON_ROOT=$VERIFICATION_ROOT/common
-
+export COCOTB_EXTENSIONS=$VERIFICATION_ROOT/common/cocotb-extensions
 alias @tb "cd $TB_SCRIPTS_ROOT"
 alias @root "cd $PROJECT_ROOT"
 
 pip install cocotb
 pip install pytest
+pushd $COCOTB_EXTENSIONS
+pip install -e .
+popd
