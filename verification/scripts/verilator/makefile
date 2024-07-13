@@ -1,5 +1,5 @@
 #CLI args
-TARGET:=memories/sp_ram
+TARGET:=memories/sp_ram/verilator
 TOP_LEVEL=sp_ram
 TARGET_PATH=${VERIFICATION_ROOT}/tb/${TARGET}
 VERBOSE:=0
