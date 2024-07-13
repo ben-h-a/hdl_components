@@ -1,0 +1,2 @@
+`verilator_config
+lint_off -rule WIDTHEXPAND -file "*/memories/apb_to_sram/apb3_to_sram.sv"
