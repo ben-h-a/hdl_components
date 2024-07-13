@@ -18,7 +18,7 @@ module tb #(
 
 fifo #(
     .DATA_WIDTH(DATA_WIDTH),
-    .DEPTH(DEPTH)
+    .DEPTH_LOG2(DEPTH)
 ) u_dut (
     .CLK_W(CLK_W),
     .CLK_R(CLK_R),

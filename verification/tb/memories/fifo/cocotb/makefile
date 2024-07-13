@@ -7,8 +7,8 @@ TOPLEVEL_LANG ?= verilog
 EXTRA_ARGS += --trace-fst --trace-structs
 
 VERILOG_SOURCES += $(PWD)/tb.sv
-VERILOG_SOURCES += $(PWD)/../fifo.sv
-VERILOG_SOURCES += $(PWD)/../../dp_ram.sv
+VERILOG_SOURCES += $(LOGICAL_ROOT)/memories/fifo/fifo.sv
+VERILOG_SOURCES += $(LOGICAL_ROOT)/memories/dp_ram.sv
 # use VHDL_SOURCES for VHDL files
 
 # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file

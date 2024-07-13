@@ -8,7 +8,7 @@ from cocotb.binary import BinaryValue
 if cocotb.simulator.is_running():
     DATA_W = int(cocotb.top.DATA_WIDTH.value)
 
-    DEPTH = int(cocotb.top.DEPTH.value)
+    DEPTH = 2**int(cocotb.top.DEPTH.value)
 
 
 async def generate_clock_w(dut, period):
