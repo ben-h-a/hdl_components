@@ -17,8 +17,7 @@ module tb #(
     output logic                   PSLVERR
 
 );
-  localparam int _num_strb = DATA_WIDTH / 8;
-  localparam _we_width = _num_strb > 1 ? $clog2(_num_strb) : 1;
+  localparam int _we_width = DATA_WIDTH / 8;
 
   logic [_sram_addr_width-1:0] sram_addr;
   logic sram_ce;

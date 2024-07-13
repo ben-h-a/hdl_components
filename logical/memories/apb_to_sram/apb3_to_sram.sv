@@ -3,9 +3,10 @@ module apb3_to_sram #(
     parameter int DATA_WIDTH = 32,
     parameter int MEM_DEPTH = 1024,  // Memory depth parameter
     localparam int _num_strb = DATA_WIDTH / 8,
-    localparam _we_width = _num_strb > 1 ? $clog2(_num_strb) : 1,
+    localparam _we_width = DATA_WIDTH / 8,
+    localparam _byte_align = _num_strb > 1 ? $clog2(_we_width) : 1,
     localparam int _sram_addr_width = $clog2(MEM_DEPTH),
-    localparam int _sram_addr_max = _sram_addr_width + _we_width
+    localparam int _sram_addr_max = _sram_addr_width + _byte_align
 ) (
     input logic CLK,
     input logic RST_N, // Active high reset
@@ -83,7 +84,7 @@ module apb3_to_sram #(
           //0xc = 0x1
           //...
           //0xdepth + we_width -> 3
-          sram_addr_reg <= PADDR[_sram_addr_max-1:_we_width];
+          sram_addr_reg <= PADDR[_sram_addr_max-1:_byte_align];
           if (PWRITE) begin
             sram_wdata_reg <= PWDATA;
             sram_we_reg <= '1;
@@ -102,7 +103,7 @@ module apb3_to_sram #(
         end
         ACCESS: begin
           pready_reg <= 1'b1;
-          if (PADDR[_sram_addr_max-1:_we_width] >= MEM_DEPTH) begin
+          if (PADDR[_sram_addr_max-1:_byte_align] >= MEM_DEPTH) begin
             //verilator lint_on WIDTHEXPAND
             pslverr_reg <= 1'b1;  // Address out of range
             state <= IDLE;  // Transition to IDLE state
